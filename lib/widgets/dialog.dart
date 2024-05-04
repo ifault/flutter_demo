@@ -80,7 +80,8 @@ class BindGALDialog extends GetView<AccountController> {
   }
 }
 class DeleteDialog extends GetView<AccountController> {
-  const DeleteDialog({super.key});
+  final String uuid;
+  const DeleteDialog(this.uuid, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +96,8 @@ class DeleteDialog extends GetView<AccountController> {
         ),
         CupertinoButton(
           onPressed: () {
-            // EasyLoading.show(status: '等待中...');
+            EasyLoading.show(status: '等待中...');
+            controller.deleteAccount(uuid);
             Navigator.of(context).pop();
           },
           child: Text('确认'),
@@ -105,7 +107,8 @@ class DeleteDialog extends GetView<AccountController> {
   }
 }
 class AddToWaitingDialog extends GetView<AccountController> {
-  const AddToWaitingDialog({super.key});
+  final String uuid;
+  const AddToWaitingDialog(this.uuid, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -120,7 +123,8 @@ class AddToWaitingDialog extends GetView<AccountController> {
         ),
         CupertinoButton(
           onPressed: () {
-            // EasyLoading.show(status: '等待中...');
+            EasyLoading.show(status: '等待中...');
+            controller.updateAccountStatus(uuid, "waiting");
             Navigator.of(context).pop();
           },
           child: Text('确认'),
@@ -130,7 +134,8 @@ class AddToWaitingDialog extends GetView<AccountController> {
   }
 }
 class BackToFreeDialog extends GetView<AccountController> {
-  const BackToFreeDialog({super.key});
+  final String uuid;
+  const BackToFreeDialog(this.uuid, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -145,7 +150,8 @@ class BackToFreeDialog extends GetView<AccountController> {
         ),
         CupertinoButton(
           onPressed: () {
-            // EasyLoading.show(status: '等待中...');
+            EasyLoading.show(status: '等待中...');
+            controller.updateAccountStatus(uuid, "free");
             Navigator.of(context).pop();
           },
           child: Text('确认'),
@@ -159,7 +165,7 @@ class BackToFreeDialog extends GetView<AccountController> {
 
 class DeleteBatchDialog extends GetView<AccountController> {
   String content;
-  int status;
+  String status;
   DeleteBatchDialog({super.key, required this.content, required this.status});
 
   @override
@@ -175,7 +181,8 @@ class DeleteBatchDialog extends GetView<AccountController> {
         ),
         CupertinoButton(
           onPressed: () {
-            // EasyLoading.show(status: '等待中...');
+            EasyLoading.show(status: '等待中...');
+            controller.deleteAccounts(status);
             Navigator.of(context).pop();
           },
           child: Text('确认'),

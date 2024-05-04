@@ -3,12 +3,12 @@ import 'dart:convert';
 class MyResponse {
     bool success;
     String message;
-    String token;
+    String? token;
 
     MyResponse({
         required this.success,
         required this.message,
-        required this.token,
+        this.token,
     });
 
     factory MyResponse.fromJson(String str) => MyResponse.fromMap(json.decode(str));

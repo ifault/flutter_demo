@@ -99,7 +99,7 @@ class MySliverDetail extends GetView<AccountController> {
                   showDialog(
                     context: context,
                     builder: (BuildContext context) {
-                      return DeleteBatchDialog(content: "删除所有账号", status:1);
+                      return DeleteBatchDialog(content: "删除所有账号", status: "free, waiting, pending");
                     });
                 },
                 child: Row(
@@ -120,7 +120,7 @@ class MySliverDetail extends GetView<AccountController> {
                   showDialog(
                     context: context,
                     builder: (BuildContext context) {
-                      return DeleteBatchDialog(content: "删除闲置账号", status:0);
+                      return DeleteBatchDialog(content: "删除闲置账号", status: "free");
                     });
                 },
                 child: Row(

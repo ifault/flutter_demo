@@ -30,15 +30,19 @@ class Accounts {
 
 class Account {
     String username;
-    String details;
+    String? details;
     String status;
     String uuid;
+    String? order;
+    String? order_time;
 
     Account({
         required this.username,
-        required this.details,
+        this.details,
         required this.status,
         required this.uuid,
+        this.order,
+        this.order_time
     });
 
     factory Account.fromJson(String str) => Account.fromMap(json.decode(str));
@@ -50,6 +54,8 @@ class Account {
         details: json["details"],
         status: json["status"],
         uuid: json["uuid"],
+        order: json["order"],
+        order_time: json["order_time"],
     );
 
     Map<String, dynamic> toMap() => {
@@ -57,5 +63,7 @@ class Account {
         "details": details,
         "status": status,
         "uuid": uuid,
+        "order": order,
+        "order_time": order_time,
     };
 }

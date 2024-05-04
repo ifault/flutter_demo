@@ -1,15 +1,16 @@
 import 'package:Ticket/controller/AccountController.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
+import '../common/notification.dart';
 import '../model/accounts.dart';
 import 'dialog.dart';
 
 class MyListItem extends GetView<AccountController> {
   Account account;
   String status;
-
   MyListItem({super.key, required this.account, required this.status});
 
   @override
@@ -17,23 +18,22 @@ class MyListItem extends GetView<AccountController> {
     return Padding(
       padding: const EdgeInsets.all(2.0),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
+        margin: const EdgeInsets.all(2.0),
         padding: const EdgeInsets.all(8),
-        decoration: const BoxDecoration(
-          border: Border(
-            left: BorderSide(
-              color: CupertinoColors.systemGrey4,
-              width: 1,
-            ),
+        decoration: BoxDecoration(
+
+          border: Border.all(
+            color: Colors.grey, // 设置边框颜色
+            width: 1.0, // 设置边框宽度
           ),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
-              color: CupertinoColors.systemGrey6,
+              color: CupertinoColors.white,
               blurRadius: 5.0, // 设置阴影的模糊半径
               offset: Offset(0, 0.5), // 设置阴影偏移量
             ),
           ],
-          borderRadius: BorderRadius.all(Radius.circular(10)),
+          borderRadius: const BorderRadius.all(Radius.circular(10)),
         ),
         child: Padding(
           padding: const EdgeInsets.all(8.0),
@@ -42,29 +42,43 @@ class MyListItem extends GetView<AccountController> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "账号: ${account.username}",
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "账号: ${account.username}",
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        "下单时间: ${account.order_time}",
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        "详情: ${account.details??''}",
+                        style: const TextStyle(
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    account.details,
-                    style: const TextStyle(
-                      fontSize: 16,
-                    ),
-                  ),
+
                   Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                     Visibility(
-                      visible: status == "free" || status == "waiting",
+                      visible: true,
                       child: IconButton(
                         icon: const Icon(CupertinoIcons.delete,),
                         onPressed: () {
                           showDialog(
                           context: context,
                           builder: (BuildContext context) {
-                            return const DeleteDialog();
+                            return DeleteDialog(account.uuid);
                           });
                         },
                       ),
@@ -77,7 +91,7 @@ class MyListItem extends GetView<AccountController> {
                           showDialog(
                           context: context,
                           builder: (BuildContext context) {
-                            return const BackToFreeDialog();
+                            return BackToFreeDialog(account.uuid);
                           });
                         },
                       ),
@@ -90,7 +104,7 @@ class MyListItem extends GetView<AccountController> {
                           showDialog(
                           context: context,
                           builder: (BuildContext context) {
-                            return const AddToWaitingDialog();
+                            return AddToWaitingDialog(account.uuid);
                           });
                         },
                       ),
@@ -114,7 +128,9 @@ class MyListItem extends GetView<AccountController> {
                       visible: status == "pending",
                       child: IconButton(
                         icon: const Icon(CupertinoIcons.money_dollar_circle),
-                        onPressed: () {},
+                        onPressed: () {
+                          controller.pay(account);
+                        },
                       ),
                     ),
                   ])
