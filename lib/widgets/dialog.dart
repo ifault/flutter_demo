@@ -162,7 +162,6 @@ class BackToFreeDialog extends GetView<AccountController> {
 }
 
 
-
 class DeleteBatchDialog extends GetView<AccountController> {
   String content;
   String status;
