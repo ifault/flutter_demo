@@ -12,7 +12,6 @@ class Repository {
   final box = GetStorage();
   final RxString baseUrl = "".obs;
   final RxString baseWsUrl = "".obs;
-  final String taobaoUrl = "http://rap2api.taobao.org/app/mock/318632";
 
   Repository() {
     // 10.0.2.2:1234
@@ -20,8 +19,15 @@ class Repository {
   }
 
   Future<Dio> getClient(bool addToken) async {
-    baseUrl.value = "http://${box.read('server')}:8000";
-    baseWsUrl.value = "ws://${box.read('server')}:8000/ws";
+    String serverUrl = box.read('server').toString();
+    if(!serverUrl.contains("http")){
+      baseUrl.value = "http://${box.read('server')}";
+      baseWsUrl.value = "ws://${box.read('server')}/ws";
+    }else{
+      baseUrl.value = serverUrl;
+      String wsAddress = serverUrl.split("//")[1];
+      baseWsUrl.value = "ws://$wsAddress/ws";
+    }
     Dio dio = Dio();
     if (addToken) {
       dio.interceptors.add(MyAuthInterceptor());
@@ -163,9 +169,13 @@ class Repository {
   }
 
   Future<void> pay(String uuid) async {
-    var client = await getClient(false);
-    client.post("$baseUrl/api/account/pay/{uuid}", data: {}).then((response) {
-      return response.data as MyResponse;
+    var client = await getClient(true);
+    client.post("$baseUrl/api/account/pay", data: {"uuid": uuid}).then((response) {
+      if (response.statusCode == 200) {
+        return MyResponse.fromMap(response.data);
+      } else {
+        return MyResponse(success: false, message: "登录失败");
+      }
     }).onError((error, stackTrace) {
       EasyLoading.showError("服务异常");
       return MyResponse(success: false, message: "登录失败");

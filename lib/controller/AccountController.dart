@@ -42,6 +42,12 @@ class AccountController extends GetxController {
     return ['闲置', '待支付'];
   }
 
+  Future<void> fetchSettings() async{
+    server.value = box.read("server");
+    password.value = box.read("password");
+    email.value = box.read("email");
+  }
+
   Future<void> fetchAccounts() async {
     Accounts a = await repository.getAccounts();
     free.clear();
@@ -51,12 +57,20 @@ class AccountController extends GetxController {
     waiting.addAll(a.data!.waiting ??[]);
     pending.addAll(a.data!.pending ?? []);
     update();
+    EasyLoading.dismiss();
   }
 
   final String baseWsUrl = "ws://10.0.2.2:8000/ws/";
 
   Future<void> _startMonitoring() async {
-    final wsUrl = Uri.parse('ws://${box.read('server')}:8000/ws/${box.read("token").toString()}');
+    String serverUrl = box.read('server').toString();
+    if(!serverUrl.contains("http")){
+      serverUrl = "ws://${box.read('server')}/ws";
+    }else{
+      String wsAddress = serverUrl.split("//")[1];
+      serverUrl = "ws://$wsAddress/ws";
+    }
+    final wsUrl = Uri.parse('$serverUrl/${box.read("token").toString()}');
     final channel = WebSocketChannel.connect(wsUrl);
     await channel.ready;
     EasyLoading.showInfo("开始监听服务消息");
@@ -92,7 +106,6 @@ class AccountController extends GetxController {
   }
 
   void success(bool? success, String? message){
-    EasyLoading.dismiss();
     fetchAccounts();
   }
 
@@ -141,10 +154,10 @@ class AccountController extends GetxController {
     Tobias tobias = Tobias();
     List<int> decodedBytes = base64Decode(account.order!);
     String decodedString = String.fromCharCodes(decodedBytes);
-    // String order = "2019102968731767&biz_content=%7B%22out_trade_no%22%3A%2220240504050100068406%22%2C%22product_code%22%3A%22QUICK_MSECURITY_PAY%22%2C%22total_amount%22%3A%22475.00%22%2C%22subject%22%3A%22%E4%B8%8A%E6%B5%B7%E8%BF%AA%E5%A3%AB%E5%B0%BC%E5%BA%A6%E5%81%87%E5%8C%BA%E4%BA%A7%E5%93%81%22%2C%22passback_params%22%3A%2216183625%22%2C%22timeout_express%22%3A%2229m%22%2C%22extend_params%22%3A%7B%22sys_service_provider_id%22%3A%222088121850549630%22%7D%7D&charset=utf-8&method=alipay.trade.app.pay&notify_url=https%3A%2F%2Fprod.origin-pmw.shanghaidisneyresort.com%2Fglobal-pool-override-A%2Fpayment-middleware-service%2Ftransaction%2Falipay%2Fconfirm%2F16183625&sign=Bx4xV%2FqEtCSBeQdjd%2ByaVX5xdzCLUVYrEcQ%2Bd4i0pdeHscva2YUBwDn6E5NJl3Pk5gaQ81znjwBSdJRnPZyXd8P7FEuCqpXTVJe0bDlAoNJrvAIYsr6N3SKcXtpV3Jvrjst16WmF7%2FP7sVwb8XHsFIuEZxBw30vBnagnoE6MKXLSqmr8ZFaAcQRrr%2FABWD3aBb%2BQ6B3p66tmlWzLlGU6lBMuBMXEpymKM7D8Uuql%2BUH0LiED%2B3%2BHWO5EvvrdcPXwyDCGS6cTigXKjcLLmaVXn7gKU%2Bki2kGzifyYVWwzSv464BLvo8PWBAT9EpJt%2FGX1I6m66SHndp%2BKkU74fTH6wQ%3D%3D&sign_type=RSA2&timestamp=2024-05-04+11%3A26%3A40&version=1.0";
     tobias.pay(decodedString).then((value) async {
       if (value['resultStatus'] == 9000 || value['resultStatus'] == '9000') {
         await repository.pay(account.uuid??"");
+        fetchAccounts();
       }else{
         EasyLoading.showError("支付失败");
       }

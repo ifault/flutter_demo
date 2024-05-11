@@ -9,6 +9,7 @@ class SettingPage extends GetView<AccountController> {
 
   @override
   Widget build(BuildContext context) {
+    controller.fetchSettings();
     TextEditingController serverController = TextEditingController();
     serverController.text = controller.server.value;
     TextEditingController passController = TextEditingController();
