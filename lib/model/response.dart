@@ -1,33 +1,51 @@
 import 'dart:convert';
+MyResponse myResponseFromMap(String str) => MyResponse.fromMap(json.decode(str));
+
+String myResponseToMap(MyResponse data) => json.encode(data.toMap());
 
 class MyResponse {
-    bool success;
-    String message;
-    String? token;
+    bool? success;
+    String? message;
+    Data? data;
 
     MyResponse({
-        required this.success,
-        required this.message,
-        this.token,
+        this.success,
+        this.message,
+        this.data,
     });
-
-    factory MyResponse.fromJson(String str) => MyResponse.fromMap(json.decode(str));
-
-    String toJson() => json.encode(toMap());
 
     factory MyResponse.fromMap(Map<String, dynamic> json) => MyResponse(
         success: json["success"],
         message: json["message"],
-        token: json["token"],
+        data: json["data"] == null ? null : Data.fromMap(json["data"]),
     );
 
     Map<String, dynamic> toMap() => {
         "success": success,
         "message": message,
-        "token": token,
+        "data": data?.toMap(),
     };
 }
 
+class Data {
+    String? token;
+    int? userId;
+
+    Data({
+        this.token,
+        this.userId,
+    });
+
+    factory Data.fromMap(Map<String, dynamic> json) => Data(
+        token: json["token"],
+        userId: json["user_id"],
+    );
+
+    Map<String, dynamic> toMap() => {
+        "token": token,
+        "user_id": userId,
+    };
+}
 
 class WsResponse {
     int code;

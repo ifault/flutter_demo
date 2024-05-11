@@ -4,8 +4,6 @@ import "package:dio/dio.dart";
 import "package:flutter_easyloading/flutter_easyloading.dart";
 import "package:get/get.dart";
 import "package:get_storage/get_storage.dart";
-import 'package:web_socket_channel/status.dart' as status;
-import 'package:web_socket_channel/web_socket_channel.dart';
 import "../model/accounts.dart";
 import "../model/response.dart";
 import "inteceptor.dart";
@@ -22,8 +20,8 @@ class Repository {
   }
 
   Future<Dio> getClient(bool addToken) async {
-    baseUrl.value = "http://${box.read('server')}:1234";
-    baseWsUrl.value = "ws://${box.read('server')}:1234/ws";
+    baseUrl.value = "http://${box.read('server')}:8000";
+    baseWsUrl.value = "ws://${box.read('server')}:8000/ws";
     Dio dio = Dio();
     if (addToken) {
       dio.interceptors.add(MyAuthInterceptor());
@@ -38,79 +36,118 @@ class Repository {
         if (response.statusCode == 200) {
           return Accounts.fromMap(response.data);
         } else {
-          return Accounts(free: [], waiting: [], pending: []);
+          return Accounts();
         }
       });
     });
   }
 
   Future<MyResponse> addAccount(String username, Function success) async {
-    var client = await getClient(false);
+    var client = await getClient(true);
     var password = box.read('password');
     return client.post("$baseUrl/api/account", data: {
       "username": username,
       "password": password.toString()
     }).then((response) {
       if (response.statusCode == 200) {
-        success();
-        return MyResponse.fromMap(response.data);
+        var res = MyResponse.fromMap(response.data);
+        success(res.success, res.message);
+        return res;
       } else {
         EasyLoading.showError("添加失败");
-        return MyResponse(success: false, message: "添加失败", token: "");
+        return MyResponse(success: false, message: "添加失败");
       }
+    }).onError((error, stackTrace) {
+      EasyLoading.showError("服务异常");
+      return MyResponse(success: false, message: "添加失败");
     });
   }
 
   Future<MyResponse> deleteAccount(String uuid, Function success) async {
-    var client = await getClient(false);
+    var client = await getClient(true);
     return client.post("$baseUrl/api/account/delete",
         data: {"uuid": uuid}).then((response) {
       if (response.statusCode == 200) {
-        success();
-        return MyResponse.fromMap(response.data);
+        var res = MyResponse.fromMap(response.data);
+        success(res.success, res.message);
+        return res;
       } else {
         EasyLoading.showError("删除失败");
-        return MyResponse(success: false, message: "删除失败", token: "");
+        return MyResponse(success: false, message: "删除失败");
       }
+    }).onError((error, stackTrace) {
+      EasyLoading.showError("服务异常");
+      return MyResponse(success: false, message: "删除失败");
     });
   }
 
   Future<MyResponse> deleteAccounts(String status, Function success) async {
-    var client = await getClient(false);
+    var client = await getClient(true);
     return client.post("$baseUrl/api/account/delete",
         data: {"status": status}).then((response) {
       if (response.statusCode == 200) {
-        success();
-        return MyResponse.fromMap(response.data);
+        var res = MyResponse.fromMap(response.data);
+        success(res.success, res.message);
+        return res;
       } else {
         EasyLoading.showError("删除失败");
-        return MyResponse(success: false, message: "删除失败", token: "");
+        return MyResponse(success: false, message: "删除失败");
       }
+    }).onError((error, stackTrace) {
+      EasyLoading.showError("服务异常");
+      return MyResponse(success: false, message: "删除失败");
     });
   }
 
   Future<MyResponse> updateAccountStatus(
       String uuid, String status, Function success) async {
-    var client = await getClient(false);
+    var client = await getClient(true);
     return client.post("$baseUrl/api/account/status",
         data: {"uuid": uuid, "status": status}).then((response) {
       if (response.statusCode == 200) {
-        success();
-        return MyResponse.fromMap(response.data);
+        var res = MyResponse.fromMap(response.data);
+        success(res.success, res.message);
+        return res;
       } else {
         EasyLoading.showError("更改失败");
-        return MyResponse(success: false, message: "更改失败", token: "");
+        return MyResponse(success: false, message: "更改失败");
       }
+    }).onError((error, stackTrace) {
+      EasyLoading.showError("服务异常");
+      return MyResponse(success: false, message: "更改失败");
+    });
+  }
+
+  Future<MyResponse> stopMonitorAccount(
+      String uuid, String taskId, Function success) async {
+    var client = await getClient(true);
+    return client.post("$baseUrl/api/account/stop",
+        data: {"uuid": uuid, "task_id": taskId}).then((response) {
+      var res = MyResponse.fromMap(response.data);
+      success(res.success, res.message);
+      return res;
+    }).onError((error, stackTrace) {
+      EasyLoading.showError("服务异常");
+      return MyResponse(success: false, message: "服务异常");
+    });
+  }
+
+  Future<MyResponse> startMonitorAccount(String uuid, Function success) async {
+    var client = await getClient(true);
+    return client.post("$baseUrl/api/account/start", data: {"uuid": uuid}).then(
+        (response) {
+      var res = MyResponse.fromMap(response.data);
+      success(res.success, res.message);
+      return res;
+    }).onError((error, stackTrace) {
+      EasyLoading.showError("服务异常");
+      return MyResponse(success: false, message: "服务异常");
     });
   }
 
   Future<MyResponse> bindMorningCard(String uuid, String card) async {
     var response = await Future.delayed(Duration(seconds: 5));
-    if (response.statusCode == 200) {
-      return MyResponse.fromMap(response.data);
-    } else {
-      return MyResponse(success: false, message: "绑定失败", token: "");
-    }
+    return response.data as MyResponse;
   }
 
   Future<MyResponse> login(String username, String password) async {
@@ -120,20 +157,18 @@ class Repository {
       if (response.statusCode == 200) {
         return MyResponse.fromMap(response.data);
       } else {
-        return MyResponse(success: false, message: "登录失败", token: "");
+        return MyResponse(success: false, message: "登录失败");
       }
     });
   }
 
   Future<void> pay(String uuid) async {
     var client = await getClient(false);
-    return client
-        .post("$baseUrl/api/account/pay/{uuid}", data: {}).then((response) {
-      if (response.statusCode == 200) {
-        return MyResponse.fromMap(response.data);
-      } else {
-        return MyResponse(success: false, message: "登录失败", token: "");
-      }
+    client.post("$baseUrl/api/account/pay/{uuid}", data: {}).then((response) {
+      return response.data as MyResponse;
+    }).onError((error, stackTrace) {
+      EasyLoading.showError("服务异常");
+      return MyResponse(success: false, message: "登录失败");
     });
   }
 }

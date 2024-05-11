@@ -6,6 +6,11 @@ class MyAuthInterceptor extends Interceptor{
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     options.headers["Authorization"] = "Bearer ${box.read("token")}";
+    options.headers["X-User-ID"] = "${box.read("userId")}";
+    if (options.data is Map) {
+      (options.data as Map<String, dynamic>).putIfAbsent('user_id', () => '${box.read("userId")}');
+      (options.data as Map<String, dynamic>).putIfAbsent('email', () => '${box.read("email")}');
+    }
     super.onRequest(options, handler);
   }
 
@@ -24,35 +29,16 @@ class MyAuthInterceptor extends Interceptor{
 class MyLoggingInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    print('Request:');
-    print('URL: ${options.uri}');
-    print('Method: ${options.method}');
-    print('Data: ${options.data}');
-    print('Headers: ${options.headers}');
-    print('');
     super.onRequest(options, handler);
   }
 
   @override
   void onResponse(Response<dynamic> response, ResponseInterceptorHandler handler) {
-    // 在接收到响应后打印响应信息
-    print('Response:');
-    print('URL: ${response.requestOptions.uri}');
-    print('Status: ${response.statusCode}');
-    if (response.data != null) {
-      print('Data: ${response.data}');
-    }
-    print('');
     super.onResponse(response, handler);
   }
 
   @override
   void onError(DioError err, ErrorInterceptorHandler handler) {
-    // 在请求发生错误时打印错误信息
-    print('Error:');
-    print('URL: ${err.requestOptions.uri}');
-    print('Error: ${err.error}');
-    print('');
     super.onError(err, handler);
   }
 }

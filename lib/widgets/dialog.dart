@@ -124,7 +124,7 @@ class AddToWaitingDialog extends GetView<AccountController> {
         CupertinoButton(
           onPressed: () {
             EasyLoading.show(status: '等待中...');
-            controller.updateAccountStatus(uuid, "waiting");
+            controller.startMonitorAccount(uuid);
             Navigator.of(context).pop();
           },
           child: Text('确认'),
@@ -135,6 +135,7 @@ class AddToWaitingDialog extends GetView<AccountController> {
 }
 class BackToFreeDialog extends GetView<AccountController> {
   final String uuid;
+
   const BackToFreeDialog(this.uuid, {super.key});
 
   @override
@@ -152,6 +153,35 @@ class BackToFreeDialog extends GetView<AccountController> {
           onPressed: () {
             EasyLoading.show(status: '等待中...');
             controller.updateAccountStatus(uuid, "free");
+            Navigator.of(context).pop();
+          },
+          child: Text('确认'),
+        ),
+      ],
+    );
+  }
+}
+
+class PauseMonitor extends GetView<AccountController> {
+  final String uuid;
+  final String taskId;
+  const PauseMonitor(this.uuid,this.taskId, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      content: Text('暂停抢票'),
+      actions: [
+        CupertinoButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: Text('取消'),
+        ),
+        CupertinoButton(
+          onPressed: () {
+            EasyLoading.show(status: '等待中...');
+            controller.stopMonitorAccount(uuid, taskId);
             Navigator.of(context).pop();
           },
           child: Text('确认'),

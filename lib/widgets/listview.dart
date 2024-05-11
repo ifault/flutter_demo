@@ -18,6 +18,16 @@ class MyListView extends GetView<AccountController> {
         itemCount: accounts.length,
         itemBuilder: (context, index) {
           return MyListItem(account: accounts[index], status: status);
+          // if (accounts.isNotEmpty) {
+          //   return MyListItem(account: accounts[index], status: status);
+          // } else {
+          //   return const Center(
+          //     child: Text(
+          //       '没有数据可显示',
+          //       style: TextStyle(fontSize: 20, color: Colors.red),
+          //     ),
+          //   );
+          // }
         },
       );
     }));

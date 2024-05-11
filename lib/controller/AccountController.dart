@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:Ticket/model/response.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -12,10 +13,10 @@ import '../model/accounts.dart';
 import '../repository/repository.dart';
 import 'package:tobias/tobias.dart' ;
 class AccountController extends GetxController {
-  Accounts accounts = Accounts(free: [], waiting: [], pending: []);
+  Accounts accounts = Accounts();
   RxBool isMonitoring = false.obs;
   final box = GetStorage();
-  final List<String> tabs = ['闲置', '待抢票', '待支付'];
+  final List<String> tabs = ['闲置', '抢票中', '待支付'];
   final repository = Get.find<Repository>();
   RxList free = [].obs;
   RxList waiting = [].obs;
@@ -23,6 +24,7 @@ class AccountController extends GetxController {
   WebSocketChannel? wsChannel;
   RxString server = "".obs;
   RxString password = "".obs;
+  RxString email = "".obs;
   final MyNotificaiton notification = Get.find();
   @override
   onInit() async {
@@ -45,18 +47,19 @@ class AccountController extends GetxController {
     free.clear();
     waiting.clear();
     pending.clear();
-    free.addAll(a.free);
-    waiting.addAll(a.waiting);
-    pending.addAll(a.pending);
+    free.addAll(a.data!.free ??[]);
+    waiting.addAll(a.data!.waiting ??[]);
+    pending.addAll(a.data!.pending ?? []);
     update();
   }
 
-  final String baseWsUrl = "ws://10.0.2.2:1234/ws/";
+  final String baseWsUrl = "ws://10.0.2.2:8000/ws/";
 
   Future<void> _startMonitoring() async {
-    final wsUrl = Uri.parse('$baseWsUrl?token=${box.read("token").toString()}');
+    final wsUrl = Uri.parse('ws://${box.read('server')}:8000/ws/${box.read("token").toString()}');
     final channel = WebSocketChannel.connect(wsUrl);
     await channel.ready;
+    EasyLoading.showInfo("开始监听服务消息");
     wsChannel = channel;
     channel.stream.listen((message) {
       WsResponse res = WsResponse.fromMap(jsonDecode(message));
@@ -65,10 +68,13 @@ class AccountController extends GetxController {
         EasyLoading.showInfo(res.message);
         isMonitoring.value = false;
       }
-      if(res.code == 1){
+      if(res.code == 0){
         notification.notity("抢票软件", res.message);
+        fetchAccounts();
       }
-    }, onDone: () {}, onError: (error) {});
+    }, onDone: () {
+    }, onError: (error) {
+    });
   }
 
   Future<void> startMonitor() async {
@@ -85,7 +91,7 @@ class AccountController extends GetxController {
     // await repository.startMonitoring();
   }
 
-  void success(){
+  void success(bool? success, String? message){
     EasyLoading.dismiss();
     fetchAccounts();
   }
@@ -106,6 +112,14 @@ class AccountController extends GetxController {
     await repository.updateAccountStatus(uuid, status, success);
   }
 
+  Future<void> stopMonitorAccount(String uuid, String taskId) async {
+    await repository.stopMonitorAccount(uuid, taskId, success);
+  }
+
+  Future<void> startMonitorAccount(String uuid) async {
+    await repository.startMonitorAccount(uuid, success);
+  }
+
   Future<void> bindMorningCard(String uuid, String card) async {
     MyResponse response = await repository.bindMorningCard(uuid, card);
     update();
@@ -113,30 +127,34 @@ class AccountController extends GetxController {
 
   Future<bool> login(String username, String password) async {
     MyResponse response = await repository.login(username, password);
-    if (response.success) {
-      box.write("token", response.token);
+    if (response.success ?? false) {
+      box.write("token", response.data?.token);
+      box.write("userId", response.data?.userId);
       return true;
     } else {
-      EasyLoading.showError(response.message);
+      EasyLoading.showError(response.message ?? "");
     }
     return false;
   }
 
   Future<void> pay(Account account) async {
     Tobias tobias = Tobias();
-    String order = "2019102968731767&biz_content=%7B%22out_trade_no%22%3A%2220240504050100068406%22%2C%22product_code%22%3A%22QUICK_MSECURITY_PAY%22%2C%22total_amount%22%3A%22475.00%22%2C%22subject%22%3A%22%E4%B8%8A%E6%B5%B7%E8%BF%AA%E5%A3%AB%E5%B0%BC%E5%BA%A6%E5%81%87%E5%8C%BA%E4%BA%A7%E5%93%81%22%2C%22passback_params%22%3A%2216183625%22%2C%22timeout_express%22%3A%2229m%22%2C%22extend_params%22%3A%7B%22sys_service_provider_id%22%3A%222088121850549630%22%7D%7D&charset=utf-8&method=alipay.trade.app.pay&notify_url=https%3A%2F%2Fprod.origin-pmw.shanghaidisneyresort.com%2Fglobal-pool-override-A%2Fpayment-middleware-service%2Ftransaction%2Falipay%2Fconfirm%2F16183625&sign=Bx4xV%2FqEtCSBeQdjd%2ByaVX5xdzCLUVYrEcQ%2Bd4i0pdeHscva2YUBwDn6E5NJl3Pk5gaQ81znjwBSdJRnPZyXd8P7FEuCqpXTVJe0bDlAoNJrvAIYsr6N3SKcXtpV3Jvrjst16WmF7%2FP7sVwb8XHsFIuEZxBw30vBnagnoE6MKXLSqmr8ZFaAcQRrr%2FABWD3aBb%2BQ6B3p66tmlWzLlGU6lBMuBMXEpymKM7D8Uuql%2BUH0LiED%2B3%2BHWO5EvvrdcPXwyDCGS6cTigXKjcLLmaVXn7gKU%2Bki2kGzifyYVWwzSv464BLvo8PWBAT9EpJt%2FGX1I6m66SHndp%2BKkU74fTH6wQ%3D%3D&sign_type=RSA2&timestamp=2024-05-04+11%3A26%3A40&version=1.0";
-    tobias.pay(order).then((value) async {
+    List<int> decodedBytes = base64Decode(account.order!);
+    String decodedString = String.fromCharCodes(decodedBytes);
+    // String order = "2019102968731767&biz_content=%7B%22out_trade_no%22%3A%2220240504050100068406%22%2C%22product_code%22%3A%22QUICK_MSECURITY_PAY%22%2C%22total_amount%22%3A%22475.00%22%2C%22subject%22%3A%22%E4%B8%8A%E6%B5%B7%E8%BF%AA%E5%A3%AB%E5%B0%BC%E5%BA%A6%E5%81%87%E5%8C%BA%E4%BA%A7%E5%93%81%22%2C%22passback_params%22%3A%2216183625%22%2C%22timeout_express%22%3A%2229m%22%2C%22extend_params%22%3A%7B%22sys_service_provider_id%22%3A%222088121850549630%22%7D%7D&charset=utf-8&method=alipay.trade.app.pay&notify_url=https%3A%2F%2Fprod.origin-pmw.shanghaidisneyresort.com%2Fglobal-pool-override-A%2Fpayment-middleware-service%2Ftransaction%2Falipay%2Fconfirm%2F16183625&sign=Bx4xV%2FqEtCSBeQdjd%2ByaVX5xdzCLUVYrEcQ%2Bd4i0pdeHscva2YUBwDn6E5NJl3Pk5gaQ81znjwBSdJRnPZyXd8P7FEuCqpXTVJe0bDlAoNJrvAIYsr6N3SKcXtpV3Jvrjst16WmF7%2FP7sVwb8XHsFIuEZxBw30vBnagnoE6MKXLSqmr8ZFaAcQRrr%2FABWD3aBb%2BQ6B3p66tmlWzLlGU6lBMuBMXEpymKM7D8Uuql%2BUH0LiED%2B3%2BHWO5EvvrdcPXwyDCGS6cTigXKjcLLmaVXn7gKU%2Bki2kGzifyYVWwzSv464BLvo8PWBAT9EpJt%2FGX1I6m66SHndp%2BKkU74fTH6wQ%3D%3D&sign_type=RSA2&timestamp=2024-05-04+11%3A26%3A40&version=1.0";
+    tobias.pay(decodedString).then((value) async {
       if (value['resultStatus'] == 9000 || value['resultStatus'] == '9000') {
-        await repository.pay(account.uuid);
+        await repository.pay(account.uuid??"");
       }else{
         EasyLoading.showError("支付失败");
       }
     });
   }
 
-  Future<bool> saveSetting(String server, String password) async {
+  Future<bool> saveSetting(String server, String password, String email) async {
     box.write("server", server);
     box.write("password", password);
+    box.write("email", email);
     return true;
   }
 

@@ -47,7 +47,7 @@ class MySliverDetail extends GetView<AccountController> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    "待抢票:",
+                    "抢票中:",
                     style: TextStyle(
                       fontSize: 16,
                       color: Theme.of(context).colorScheme.primary,

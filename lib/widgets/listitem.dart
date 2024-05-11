@@ -54,7 +54,7 @@ class MyListItem extends GetView<AccountController> {
                         ),
                       ),
                       Text(
-                        "下单时间: ${account.order_time}",
+                        "下单时间: ${account.orderTime??""}",
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -78,7 +78,7 @@ class MyListItem extends GetView<AccountController> {
                           showDialog(
                           context: context,
                           builder: (BuildContext context) {
-                            return DeleteDialog(account.uuid);
+                            return DeleteDialog(account.uuid??"");
                           });
                         },
                       ),
@@ -86,13 +86,13 @@ class MyListItem extends GetView<AccountController> {
                     Visibility(
                       visible: status == "waiting",
                       child: IconButton(
-                        icon: const Icon(CupertinoIcons.back,),
+                        icon: const Icon(CupertinoIcons.pause,),
                         onPressed: () {
                           showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return BackToFreeDialog(account.uuid);
-                          });
+                              context: context,
+                              builder: (BuildContext context) {
+                                return PauseMonitor(account.uuid??"", account.taskId??"");
+                              });
                         },
                       ),
                     ),
@@ -104,7 +104,7 @@ class MyListItem extends GetView<AccountController> {
                           showDialog(
                           context: context,
                           builder: (BuildContext context) {
-                            return AddToWaitingDialog(account.uuid);
+                            return AddToWaitingDialog(account.uuid??"");
                           });
                         },
                       ),
